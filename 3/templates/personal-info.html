@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Info</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .dashboard-container {
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #333;
+            color: #fff;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .sidebar h2 {
+            margin-top: 0;
+        }
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .sidebar ul li {
+            margin: 10px 0;
+        }
+        .sidebar ul li a {
+            color: #fff;
+            text-decoration: none;
+            display: block;
+            padding: 10px;
+        }
+        .sidebar ul li a:hover {
+            background-color: #444;
+        }
+        .content {
+            flex: 1;
+            padding: 20px;
+            background-color: #fff;
+            box-sizing: border-box;
+        }
+        .dropdown-content {
+            display: none;
+            background-color: #f9f9f9;
+            position: absolute;
+            min-width: 200px;
+            z-index: 1;
+        }
+        .dropdown-content p {
+            padding: 10px;
+            margin: 0;
+        }
+        .dropdown-btn {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+        }
+        .loading, .error-message {
+            color: red;
+        }
+        .logout-btn {
+            background-color: #c00;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="sidebar">
+            <h2>Manager Dashboard</h2>
+            <ul>
+                <li><a href="{{ url_for('Personal_info') }}">Personal Info</a></li>
+                <li><a href="{{ url_for('Manager_tools') }}">Manager Tools</a></li>
+                <li><a href="{{ url_for('Reports') }}">Reports</a></li>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+
+            </ul>
+            <div id="personal-info-dropdown" class="dropdown-content">
+                <p><strong>First Name:</strong> <span id="given-name"></span></p>
+                <p><strong>Last Name:</strong> <span id="family-name"></span></p>
+                <p><strong>Email:</strong> <span id="email"></span></p>
+                <p><strong>User ID:</strong> <span id="user-id"></span></p>
+                <p><strong>Client:</strong> <span id="azp"></span></p>
+                <p><strong>email verified:</strong> <span id="email_verified"></span></p>
+
+            </div>
+        </div>
+        <div class="content">
+            <h1>Personal Information</h1>
+            <p id="user-details">Loading user details...</p>
+            <a href="{{ url_for('Manager_tools') }}">Back to Dashboard</button>
+        </div>
+    </div>
+<script>
+    async function loadUserDetails() {
+    const token = localStorage.getItem('access_token');
+    const clientName = localStorage.getItem('client'); // Assuming you store the client name in localStorage
+
+    if (!token) {
+        redirectToLogin();
+        return;
+    }
+
+    if (!clientName) {
+        console.error('Client name is missing');
+        document.getElementById('user-details').innerHTML = '<p class="error-message">Client name is missing.</p>';
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/auth/user-details', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ client: clientName }) // Automatically use the stored client name
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Error fetching user details:', errorData.error);
+            document.getElementById('user-details').innerHTML = `<p class="error-message">${errorData.error}</p>`;
+            return;
+        }
+
+        const data = await response.json();
+        document.getElementById('given-name').textContent = data.given_name || 'N/A';
+        document.getElementById('family-name').textContent = data.family_name || 'N/A';
+        document.getElementById('email').textContent = data.email || 'N/A';
+        document.getElementById('user-id').textContent = data.sub || 'N/A';
+        document.getElementById('azp').textContent = data.client || 'N/A';
+        document.getElementById('email_verified').textContent = data.verify || 'N/A';
+
+
+
+        // Display user info in the content section
+        document.getElementById('user-details').innerHTML = `
+            <p><strong>Name:</strong> ${data.given_name} ${data.family_name}</p>
+            <p><strong>Email:</strong> ${data.email}</p>
+            <p><strong>User ID:</strong> ${data.sub}</p>
+            <p><strong>client:</strong> ${data.client}</p>
+            <p><strong>email verified:</strong> ${data.verify}</p>
+
+        `;
+    } catch (error) {
+        console.error('Error occurred:', error);
+        document.getElementById('user-details').innerHTML = '<p class="error-message">An error occurred while fetching user details.</p>';
+    }
+}
+
+
+function logout() {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    redirectToLogin(); // Redirect to login page
+}
+
+function redirectToLogin() {
+    window.location.href = '/'; // Change this to your login page
+}
+
+window.onload = function() {
+    loadUserDetails();
+};
+
+
+</script>
+</body>
+</html>

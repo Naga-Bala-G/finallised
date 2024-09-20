@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports</title>
+    <style>
+        /* Reuse the same CSS styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .dashboard-container {
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #333;
+            color: #fff;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .logout-btn {
+            background-color: #c00;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+        }
+        .sidebar h2 {
+            margin-top: 0;
+        }
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .sidebar ul li {
+            margin: 10px 0;
+        }
+        .sidebar ul li a {
+            color: #fff;
+            text-decoration: none;
+            display: block;
+            padding: 10px;
+        }
+        .sidebar ul li a:hover {
+            background-color: #444;
+        }
+        .content {
+            flex: 1;
+            padding: 20px;
+            background-color: #fff;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="sidebar">
+            <h2>Manager Dashboard</h2>
+            <ul>
+                <li><a href="{{ url_for('Personal_info') }}">Personal Info</a></li>
+                <li><a href="{{ url_for('Manager_tools') }}">Manager Tools</a></li>
+                <li><a href="{{ url_for('Reports') }}">Reports</a></li>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </ul>
+        </div>
+        <div class="content">
+            <h1>Reports</h1>
+            <p>View and generate reports here.</p>
+        </div>
+    </div>
+    <script>
+        function logout() {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    redirectToLogin();
+}
+
+function redirectToLogin() {
+    window.location.href = '/'; // Change this to your login page
+}
+
+window.onload = function() {
+    loadUserDetails();
+};
+
+    </script>
+</body>
+</html>

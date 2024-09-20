@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            background-color: #f4f4f9;
+        }
+
+        /* Sidebar styles */
+        .sidebar {
+            width: 250px;
+            background-color: #333;
+            color: white;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar h2 {
+            color: #fff;
+            margin-bottom: 1.5rem;
+        }
+
+        .sidebar button {
+            background-color: #444;
+            border: none;
+            color: white;
+            padding: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+        }
+
+        .sidebar button:hover {
+            background-color: #555;
+        }
+
+        .logout {
+            margin-top: auto;
+            background-color: #e74c3c;
+            border: none;
+            color: white;
+            padding: 10px;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .logout:hover {
+            background-color: #c0392b;
+        }
+
+        /* Main content */
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Home content */
+        .home-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-item {
+            background-color: #fff;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+        }
+
+        .user-details {
+            background-color: #fff;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Form for changing roles */
+        input[type="text"], select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        button[type="submit"] {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Manager Dashboard</h2>
+        
+        <!-- Navigation Buttons -->
+        <button onclick="showHomeContent('welcome')">Home</button>
+        <button onclick="showHomeContent('user-list')">Users</button>
+        <button onclick="showHomeContent('role-form')">Manage Roles</button>
+
+        <!-- Logout Button -->
+        <button class="logout" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="main-content">
+        <h1>Welcome, <span id="manager-name"></span></h1>
+
+        <!-- Home Content -->
+        <div id="home-content" class="home-content">
+            <!-- Content will be injected here based on button actions -->
+        </div>
+    </div>
+
+    <script>
+        let managerUserId = '';
+
+        // Show the appropriate content in the home-content div
+        function showHomeContent(contentType) {
+            const homeContent = document.getElementById('home-content');
+            homeContent.innerHTML = ''; // Clear current content
+
+            if (contentType === 'welcome') {
+                homeContent.innerHTML = `
+                    <h2>Welcome to the Manager Dashboard</h2>
+                    <p>Select an option from the sidebar to get started.</p>
+                `;
+            } else if (contentType === 'user-list') {
+                homeContent.innerHTML = `
+                    <h2>User List</h2>
+                    <button onclick="fetchUsers()">Load Users</button>
+                    <div id="users-content" class="user-list"></div>
+                `;
+            } else if (contentType === 'role-form') {
+                homeContent.innerHTML = `
+                    <h2>Change User Role</h2>
+                    <form onsubmit="changeUserRole(event)">
+                        <label for="username">Username:</label>
+                        <input type="text" id="username" required>
+
+                        <label for="role">Select Role:</label>
+                        <select id="role" required>
+                            <option value="Employee">Employee</option>
+                            <option value="Executive">Executive</option>
+                        </select>
+
+                        <button type="submit">Change Role</button>
+                    </form>
+                `;
+            }
+        }
+
+        // Fetch manager info and display personalized welcome message
+        async function fetchManagerInfo() {
+            try {
+                const response = await fetch('/api/keycloak/user-info', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user info');
+                }
+
+                const user = await response.json();
+                document.getElementById('manager-name').textContent = user.firstName;
+                managerUserId = user.id; // Save manager user ID
+
+                // Show home content by default
+                showHomeContent('welcome');
+            } catch (error) {
+                console.error('Error fetching manager info:', error);
+            }
+        }
+
+        // Fetch users from the API
+        async function fetchUsers() {
+            try {
+                const response = await fetch('/api/users', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch users');
+                }
+
+                const users = await response.json();
+                const userList = document.getElementById('users-content');
+                userList.innerHTML = ''; // Clear previous list
+
+                users.forEach(user => {
+                    if (user.id !== managerUserId) { // Exclude the manager user
+                        const userItem = document.createElement('div');
+                        userItem.className = 'user-item';
+                        userItem.textContent = `${user.firstName} ${user.lastName}`;
+                        userItem.onclick = () => showUserDetails(user); // Add click event for user details
+                        userList.appendChild(userItem);
+                    }
+                });
+            } catch (error) {
+                console.error('Error fetching users:', error);
+            }
+        }
+
+        // Display user details when a user is clicked
+        function showUserDetails(user) {
+            const homeContent = document.getElementById('home-content');
+            homeContent.innerHTML = `
+                <h2>User Details</h2>
+                <p><strong>First Name:</strong> ${user.firstName}</p>
+                <p><strong>Last Name:</strong> ${user.lastName}</p>
+                <p><strong>Username:</strong> ${user.username}</p>
+                <p><strong>Email:</strong> ${user.email}</p>
+                <p><strong>Role:</strong> ${user.roles}</p>
+                <p><strong>ID:</strong> ${user.id}</p>
+                <p><strong>Enabled:</strong> ${user.enabled ? 'Yes' : 'No'}</p>
+                <p><strong>Created At:</strong> ${user.createdAt || 'N/A'}</p>
+                <p><strong>Updated At:</strong> ${user.updatedAt || 'N/A'}</p>
+            `;
+        }
+
+        // Change user role (restricted to Employee and Executive)
+        async function changeUserRole(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const role = document.getElementById('role').value;
+
+            try {
+                const response = await fetch('/api/auth/change-role', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    },
+                    body: JSON.stringify({ username, role })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to change role');
+                }
+                
+                // Optionally show a success message
+                showHomeContent('role-form');
+            } catch (error) {
+                console.error('Error changing role:', error);
+            }
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('access_token');
+            window.location.href = '/login'; // Redirect to login page
+        }
+
+        // Fetch manager info on page load
+        fetchManagerInfo();
+    </script>
+</body>
+</html>

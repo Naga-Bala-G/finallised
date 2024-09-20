@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .dashboard-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #333;
+            color: #fff;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .sidebar h2 {
+            margin-top: 0;
+        }
+
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .sidebar ul li {
+            margin: 10px 0;
+        }
+
+        .sidebar ul li a {
+            color: #fff;
+            text-decoration: none;
+            display: block;
+            padding: 10px;
+        }
+
+        .sidebar ul li a:hover {
+            background-color: #444;
+        }
+
+        .dropdown-btn {
+            background-color: #333;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            text-align: left;
+            cursor: pointer;
+            width: 100%;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .dropdown-btn:hover {
+            background-color: #444;
+        }
+
+        .content {
+            flex: 1;
+            padding: 20px;
+            background-color: #fff;
+            box-sizing: border-box;
+        }
+
+        .form-container {
+            margin-top: 20px;
+        }
+
+        .form-container input, .form-container select {
+            margin: 10px 0;
+            padding: 10px;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .logout-btn {
+            background-color: #c00;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+        }
+
+        .form-container button {
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+        }
+
+        .form-container button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="sidebar">
+            <h2>Manager Dashboard</h2>
+            <ul>
+                <li><a href="{{ url_for('Personal_info') }}">Personal Info</a></li>
+            </ul>
+            <button class="dropdown-btn" onclick="toggleDropdown()">Manager Tools</button>
+            <div id="manager-tools-dropdown" style="display: none;">
+                <button onclick="showToolContent('assign-role')">Assign Role</button><br>
+                <button onclick="showToolContent('remove-role')">Remove Role</button><br>
+                <button onclick="showToolContent('change-role')">Change Role</button>
+            </div>
+            <ul>
+                <li><a href="{{ url_for('Reports') }}">Reports</a></li>
+            </ul>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+        <div class="content">
+            <div id="tool-content">
+                <h3>Welcome to the Manager Dashboard</h3>
+                <p>Select a tool from the Manager Tools dropdown to view details here.</p>
+            </div>
+            <div id="assign-role-content" style="display: none;">
+                <h2>Assign Role</h2>
+                <div class="form-container">
+                    <label for="assign-user-input">Enter Username:</label>
+                    <input type="text" id="assign-user-input" placeholder="Enter Username" required>
+                    <label for="assign-role-select">Select Role:</label>
+                    <select id="assign-role-select" required>
+                        <option value="comp_admin">Manager</option>
+                        <option value="comp_exe">Executive</option>
+                        <option value="comp_emp">Employee</option>
+                    </select>
+                    <button onclick="assignRole()">Assign Role</button>
+                </div>
+            </div>
+            <div id="remove-role-content" style="display: none;">
+                <h2>Remove Role</h2>
+                <div class="form-container">
+                    <label for="remove-user-input">Enter Username:</label>
+                    <input type="text" id="remove-user-input" placeholder="Enter Username" required>
+                    <label for="remove-role-select">Select Role:</label>
+                    <select id="remove-role-select" required>
+                        <option value="comp_admin">Manager</option>
+                        <option value="comp_exe">Executive</option>
+                        <option value="comp_emp">Employee</option>
+                    </select>
+                    <button onclick="removeRole()">Remove Role</button>
+                </div>
+            </div>
+            <div id="change-role-content" style="display: none;">
+                <h2>Change Role</h2>
+                <div class="form-container">
+                    <label for="change-user-input">Enter Username:</label>
+                    <input type="text" id="change-user-input" placeholder="Enter Username" required>
+                    <label for="old-role-select">Old Role:</label>
+                    <select id="old-role-select" required>
+                        <option value="comp_admin">Manager</option>
+                        <option value="comp_exe">Executive</option>
+                        <option value="comp_emp">Employee</option>
+                    </select>
+                    <label for="new-role-select">New Role:</label>
+                    <select id="new-role-select" required>
+                        <option value="comp_admin">Manager</option>
+                        <option value="comp_exe">Executive</option>
+                        <option value="comp_emp">Employee</option>
+                    </select>
+                    <button onclick="changeRole()">Change Role</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleDropdown() {
+            const dropdown = document.getElementById('manager-tools-dropdown');
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function showToolContent(toolId) {
+            const contentArea = document.getElementById('tool-content');
+            const assignRoleContent = document.getElementById('assign-role-content');
+            const removeRoleContent = document.getElementById('remove-role-content');
+            const changeRoleContent = document.getElementById('change-role-content');
+
+            contentArea.style.display = 'none';
+            assignRoleContent.style.display = 'none';
+            removeRoleContent.style.display = 'none';
+            changeRoleContent.style.display = 'none';
+
+            if (toolId === 'assign-role') {
+                assignRoleContent.style.display = 'block';
+            } else if (toolId === 'remove-role') {
+                removeRoleContent.style.display = 'block';
+            } else if (toolId === 'change-role') {
+                changeRoleContent.style.display = 'block';
+            }
+        }
+
+        async function loadUserDetails() {
+            const token = localStorage.getItem('access_token');
+            const clientName = localStorage.getItem('client');
+
+            if (!token || !clientName) {
+                alert('Missing access token or client name.');
+                return;
+            }
+        }
+
+        async function assignRole() {
+            const username = document.getElementById('assign-user-input').value.trim();
+            const role = document.getElementById('assign-role-select').value;
+
+            if (!username || !role) {
+                alert('Please enter a username and select a role.');
+                return;
+            }
+
+            const token = localStorage.getItem('access_token');
+            const clientName = localStorage.getItem('client');
+
+            if (!token || !clientName) {
+                alert('Missing access token or client name.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/roles/assign', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, role, client: clientName })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    alert(`Failed to assign role: ${result.error}`);
+                    return;
+                }
+
+                alert(result.message);
+            } catch (error) {
+                alert('An error occurred while assigning the role.');
+            }
+        }
+
+        async function removeRole() {
+            const username = document.getElementById('remove-user-input').value.trim();
+            const role = document.getElementById('remove-role-select').value;
+
+            if (!username || !role) {
+                alert('Please enter a username and select a role.');
+                return;
+            }
+
+            const token = localStorage.getItem('access_token');
+            const clientName = localStorage.getItem('client');
+
+            if (!token || !clientName) {
+                alert('Missing access token or client name.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/roles/remove', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, role, client: clientName })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    alert(`Failed to remove role: ${result.error}`);
+                    return;
+                }
+
+                alert(result.message);
+            } catch (error) {
+                alert('An error occurred while removing the role.');
+            }
+        }
+
+        async function changeRole() {
+            const username = document.getElementById('change-user-input').value.trim();
+            const oldRole = document.getElementById('old-role-select').value;
+            const newRole = document.getElementById('new-role-select').value;
+
+            if (!username || !oldRole || !newRole) {
+                alert('Please enter a username and select both roles.');
+                return;
+            }
+
+            const token = localStorage.getItem('access_token');
+            const clientName = localStorage.getItem('client');
+
+            if (!token || !clientName) {
+                alert('Missing access token or client name.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/roles/change_role', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, old_role: oldRole, new_role: newRole, client: clientName })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    alert(`Failed to change role: ${result.error}`);
+                    return;
+                }
+
+                alert(result.message);
+            } catch (error) {
+                alert('An error occurred while changing the role.');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('client'); // Remove client name on logout
+            window.location.href = '/';
+        }
+
+        // Call loadUserDetails on page load
+        window.onload = loadUserDetails;
+    </script>
+</body>
+</html>

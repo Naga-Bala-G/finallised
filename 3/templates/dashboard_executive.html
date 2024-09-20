@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Executive Dashboard</title>
+    <style>
+        /* Combined CSS Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .dashboard-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #333;
+            color: #fff;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .sidebar h2 {
+            margin-top: 0;
+        }
+
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .sidebar ul li {
+            margin: 10px 0;
+        }
+
+        .sidebar ul li a {
+            color: #fff;
+            text-decoration: none;
+            display: block;
+            padding: 10px;
+        }
+
+        .sidebar ul li a:hover {
+            background-color: #444;
+        }
+
+        .dropdown-content {
+            display: none;
+            background-color: #444;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .dropdown-content button {
+            display: block;
+            background-color: #555;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            margin-bottom: 5px;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .dropdown-content button:hover {
+            background-color: #666;
+        }
+
+        .dropdown-btn {
+            background-color: #333;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            text-align: left;
+            cursor: pointer;
+            width: 100%;
+            border-radius: 5px;
+        }
+
+        .dropdown-btn:hover {
+            background-color: #444;
+        }
+
+        .content {
+            flex: 1;
+            padding: 20px;
+            background-color: #fff;
+            box-sizing: border-box;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .logout-btn {
+            background-color: #c00;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+        }
+
+        .logout-btn:hover {
+            background-color: #a00;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="sidebar">
+            <h2>Executive Dashboard</h2>
+            <button class="dropdown-btn" onclick="toggleDropdown('personal-info-dropdown')">Personal Info</button>
+            <div id="personal-info-dropdown" class="dropdown-content">
+                <p><strong>First Name:</strong> <span id="given-name"></span></p>
+                <p><strong>Last Name:</strong> <span id="family-name"></span></p>
+                <p><strong>Email:</strong> <span id="email"></span></p>
+                <p><strong>User ID:</strong> <span id="user-id"></span></p>
+                <p><strong>Client:</strong> <span id="client"></span></p>
+                <p><strong>Email Verified:</strong> <span id="email-verified"></span></p>
+            </div>
+            <button class="dropdown-btn" onclick="toggleDropdown('executive-tools-dropdown')">Executive Tools</button>
+            <div id="executive-tools-dropdown" class="dropdown-content">
+                <button onclick="showToolContent('financial-tools')">Financial Tools</button>
+                <button onclick="showToolContent('analytics-tools')">Analytics Tools</button>
+                <button onclick="showToolContent('time-task-tools')">Time and Task Management Tools</button>
+            </div>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+        <div class="content">
+            <div id="tool-content">
+                <h3>Welcome to the Executive Dashboard</h3>
+                <p>Select a tool from the Executive Tools dropdown to view details here.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadUserDetails() {
+            const token = localStorage.getItem('access_token');
+            const clientName = localStorage.getItem('client'); // Assuming you store the client name in localStorage
+
+            if (!token) {
+                redirectToLogin();
+                return;
+            }
+
+            if (!clientName) {
+                console.error('Client name is missing');
+                document.getElementById('given-name').textContent = 'N/A';
+                document.getElementById('family-name').textContent = 'N/A';
+                document.getElementById('email').textContent = 'N/A';
+                document.getElementById('user-id').textContent = 'N/A';
+                document.getElementById('client').textContent = 'Client name is missing.';
+                document.getElementById('email-verified').textContent = 'N/A';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/user-details', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ client: clientName }) // Use the stored client name
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Error fetching user details:', errorData.error);
+                    document.getElementById('given-name').textContent = 'N/A';
+                    document.getElementById('family-name').textContent = 'N/A';
+                    document.getElementById('email').textContent = 'N/A';
+                    document.getElementById('user-id').textContent = 'N/A';
+                    document.getElementById('client').textContent = errorData.error; // Display error
+                    document.getElementById('email-verified').textContent = 'N/A';
+                    return;
+                }
+
+                const data = await response.json();
+                document.getElementById('given-name').textContent = data.given_name || 'N/A';
+                document.getElementById('family-name').textContent = data.family_name || 'N/A';
+                document.getElementById('email').textContent = data.email || 'N/A';
+                document.getElementById('user-id').textContent = data.sub || 'N/A';
+                document.getElementById('client').textContent = data.client || 'N/A';
+                document.getElementById('email-verified').textContent = data.verify ? 'Yes' : 'No'; // Display verification status
+
+            } catch (error) {
+                console.error('Error occurred:', error);
+                document.getElementById('user-details').innerHTML = '<p class="error-message">An error occurred while fetching user details.</p>';
+            }
+        }
+
+        function toggleDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId);
+            if (dropdown) {
+                dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+                if (dropdownId === 'personal-info-dropdown') {
+                    loadUserDetails();
+                }
+            }
+        }
+
+        function showToolContent(toolId) {
+            const contentArea = document.getElementById('tool-content');
+            let content = '';
+
+            if (toolId === 'financial-tools') {
+                content = `
+                    <h3>Financial Tools</h3>
+                    <p>Here you can manage financial reports, budgets, and forecasts.</p>
+                `;
+            } else if (toolId === 'analytics-tools') {
+                content = `
+                    <h3>Analytics Tools</h3>
+                    <p>Analyze business performance with these tools and generate insights from data.</p>
+                `;
+            } else if (toolId === 'time-task-tools') {
+                content = `
+                    <h3>Time and Task Management Tools</h3>
+                    <p>Manage your time and tasks efficiently with scheduling and tracking tools.</p>
+                `;
+            }
+
+            contentArea.innerHTML = content;
+        }
+
+        function logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            redirectToLogin(); // Redirect to login page
+        }
+
+        function redirectToLogin() {
+            window.location.href = '/'; // Change this to your login page
+        }
+
+        window.onload = function() {
+            loadUserDetails();
+        };
+    </script>
+</body>
+</html>
